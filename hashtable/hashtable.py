@@ -22,7 +22,9 @@ class HashTable:
 
     def __init__(self, capacity):
         # Your code here
-
+        self.capacity = capacity
+        self.size = 0
+        self.buckets = [None] * self.capacity
 
     def get_num_slots(self):
         """
@@ -35,7 +37,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-
+        return self.capacity
 
     def get_load_factor(self):
         """
@@ -54,6 +56,13 @@ class HashTable:
         """
 
         # Your code here
+        hval = 0x811c9dc5
+        fnvprime = 0x01000193
+        fnvsize = 2**64
+        for s in key:
+            hval = hval ^ ord(s)
+            hval = (hval * fnvprime) % fnvsize
+        return hval
 
 
     def djb2(self, key):
@@ -70,8 +79,23 @@ class HashTable:
         Take an arbitrary key and return a valid integer index
         between within the storage capacity of the hash table.
         """
-        #return self.fnv1(key) % self.capacity
-        return self.djb2(key) % self.capacity
+        return self.fnv1(key) % self.capacity
+
+        #return self.djb2(key) % self.capacity
+
+    def add_to_head(self, key, value, index):
+        new_node = HashTableEntry(key, value) 
+
+        store = self.buckets
+
+        if store[index] is None:
+            store[index] = new_node 
+            self.size += 1
+        else:
+            new_node.next = store[index]
+            store[index] = new_node
+            self.size += 1
+
 
     def put(self, key, value):
         """
@@ -82,6 +106,10 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        self.size += 1
+        index = self.hash_index(key)
+        # self.buckets[index] = value
+        return self.add_to_head(key, value, index)
 
 
     def delete(self, key):
@@ -93,6 +121,41 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        index = self.hash_index(key)
+        # if self.buckets[index] is None:
+        #     print("not found")
+        # else:
+        #     self.buckets[index] = None
+
+        cur = self.buckets[index]
+
+        if cur.key == key:
+            self.buckets[index] = self.buckets[index].next
+            self.size -= 1
+            return self.buckets[index]
+
+        prev = cur
+        cur = cur.next
+        while cur is not None:
+            if cur.key is key:
+                prev.next = cur.next
+                self.size -= 1
+                return cur.value
+            else:
+                prev = prev.next
+                cur = cur.next
+                
+        return None
+
+    def find(self, key, index):
+        cur = self.buckets[index]
+
+        while cur is not None:
+            if cur.key == key:
+                return cur.value
+
+            cur = cur.next
+        return None 
 
 
     def get(self, key):
@@ -104,6 +167,9 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        index = self.hash_index(key)
+        # return self.buckets[index]
+        return self.find(key, index)
 
 
     def resize(self, new_capacity):
@@ -114,6 +180,17 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        self.capacity = new_capacity
+        old_buckets = self.buckets
+        self.buckets = [None] * self.capacity
+
+        
+        for i in old_buckets:
+            self.put(i.key, i.value)
+            cur = i.next
+            while cur is not None:
+                self.put(cur.key, cur.value)
+                cur = cur.next
 
 
 
